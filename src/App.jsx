@@ -25,7 +25,7 @@ function App() {
     )
     
     // Increased from 8 to 15 for bigger detection zone
-    if (distance < 15 && !isFound) {
+    if (distance < 5 && !isFound) {
       setIsFound(true)
       setOilSpurt(true)
       setShowPopup(true)
@@ -119,26 +119,60 @@ function App() {
       {!hasStarted && (
         <div className="absolute top-8 left-0 right-0 text-center z-50 px-4">
           <p className="text-gray-800 text-lg md:text-2xl font-medium">
-            Click and drag the fracker to the oil spot for a surprise
+            Click and drag the fracker to the oil spot for a surprise!
           </p>
         </div>
       )}  
 
       {/* Visible oil spot target */}
       <div
-        className="absolute w-12 h-12 md:w-16 md:h-16 rounded-full pointer-events-none"
+        className="absolute w-16 h-16 md:w-20 md:h-20 pointer-events-none"
         style={{
           left: `${targetSpot.x}%`,
           top: `${targetSpot.y}%`,
           transform: 'translate(-50%, -50%)',
-          background: 'radial-gradient(circle, rgba(139,69,19,0.8) 0%, rgba(101,67,33,0.6) 50%, rgba(139,69,19,0.3) 100%)',
-          boxShadow: '0 0 20px rgba(139,69,19,0.4), inset 0 0 10px rgba(0,0,0,0.3)',
           zIndex: 1,
         }}
       >
-
-      {/* Oil shimmer effect */}
-      <div className="absolute inset-2 rounded-full bg-gradient-to-br from-amber-900/40 to-transparent animate-pulse" />
+        {/* Main oil splatter */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 60% 50% at 45% 45%, rgba(20,15,10,0.95) 0%, rgba(15,10,8,0.85) 40%, rgba(10,8,6,0.6) 70%, transparent 100%)',
+            filter: 'blur(1px)',
+          }}
+        />
+        
+        {/* Irregular splatter edges */}
+        <div className="absolute w-6 h-6 bg-black/70 rounded-full blur-sm" 
+            style={{ top: '-10%', left: '60%' }} />
+        <div className="absolute w-4 h-4 bg-black/60 rounded-full blur-sm" 
+            style={{ top: '70%', left: '-5%' }} />
+        <div className="absolute w-5 h-5 bg-black/65 rounded-full blur-sm" 
+            style={{ top: '65%', right: '5%' }} />
+        <div className="absolute w-3 h-3 bg-black/50 rounded-full blur-sm" 
+            style={{ top: '10%', left: '10%' }} />
+        
+        {/* Dark center */}
+        <div 
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            background: 'radial-gradient(circle, rgba(5,5,5,0.9) 0%, rgba(15,10,8,0.7) 30%, transparent 60%)',
+          }}
+        />
+        
+        {/* Subtle shine on oil */}
+        <div 
+          className="absolute opacity-20"
+          style={{
+            top: '20%',
+            left: '30%',
+            width: '30%',
+            height: '20%',
+            background: 'radial-gradient(ellipse, rgba(255,255,255,0.3) 0%, transparent 70%)',
+            filter: 'blur(2px)',
+          }}
+        />
       </div>
 
         {/* Draggable fracking machine */}
