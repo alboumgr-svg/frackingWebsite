@@ -1,5 +1,46 @@
 import { useState, useEffect, useRef } from 'react'
 
+const generateOilBlob = () => {
+  // Creating a more organic "blob" using border radius and multiple layers
+  return {
+    rotation: Math.random() * 360,
+    borderRadius: `${40 + Math.random() * 20}% ${35 + Math.random() * 25}% ${45 + Math.random() * 20}% ${30 + Math.random() * 30}% / ${35 + Math.random() * 25}% ${45 + Math.random() * 20}% ${30 + Math.random() * 30}% ${40 + Math.random() * 20}%`,
+    splatter: Array.from({ length: 6 }).map(() => ({
+      size: 15 + Math.random() * 20,
+      x: -20 + Math.random() * 140,
+      y: -20 + Math.random() * 140,
+      radius: `${40 + Math.random() * 20}%`
+    }))
+  }
+}
+
+const successMessages = [
+  "Nice fracking job!",
+  "Good fracking work!",
+  "Frack-tastic effort!",
+  "Legendary fracking!",
+  "Keep on fracking!",
+  "Frack to the future!",
+  "You're a fracking natural!",
+  "Absolute fracking genius!",
+  "That's some deep fracking!",
+  "Frack me, that was fast!",
+  "You fracked that hole perfectly!",
+  "The best fracker in the patch!",
+  "Frack it like you mean it!",
+  "Mother Earth felt that one!",
+  "Fracking masterclass!",
+  "Don't stop fracking now!",
+  "You really know your way around a drill!",
+  "That's some high-pressure fracking!",
+  "You're fracking unstoppable!",
+  "Frack yeah!",
+  "Drill baby, drill!",
+  "A fracking master at work!",
+  "You've got the fracking touch!",
+  "Total fracking domination!"
+];
+
 function App() {
   const [position, setPosition] = useState({ x: 50, y: 50 })
   const [isDragging, setIsDragging] = useState(false)
@@ -10,40 +51,72 @@ function App() {
   const [oilSpurt, setOilSpurt] = useState(false)
   const machineRef = useRef(null)
   const [hasStarted, setHasStarted] = useState(false)
+  const [oilBlob, setOilBlob] = useState(generateOilBlob())
+  
+  // Growth, losing, and difficulty states
+  const [oilScale, setOilScale] = useState(1)
+  const [gameOver, setGameOver] = useState(false)
+  const [difficulty, setDifficulty] = useState(1)
+  const [currentMessage, setCurrentMessage] = useState(successMessages[0]);
 
   const generateNewTarget = () => {
+    setOilBlob(generateOilBlob())
+    setOilScale(1) // Reset growth for next round
     setTargetSpot({
       x: 20 + Math.random() * 60,
-      y: 20 + Math.random() * 60
+      y: 20 + Math.random() * 45 
     })
   }
+
+  // Handle rapid oil growth with difficulty scaling
+  useEffect(() => {
+    if (gameOver || isFound) return;
+
+    const interval = setInterval(() => {
+      setOilScale(prev => {
+        // Increases growth speed based on how many you've successfully fracked
+        const next = prev + (0.03 * difficulty);
+        if (next > 35) { 
+          setGameOver(true);
+          clearInterval(interval);
+        }
+        return next;
+      });
+    }, 40); // 40ms for very smooth, rapid expansion
+
+    return () => clearInterval(interval);
+  }, [gameOver, isFound, targetSpot, difficulty]);
 
   const checkIfFound = (machineX, machineY) => {
     const distance = Math.sqrt(
       Math.pow(machineX - targetSpot.x, 2) + 
       Math.pow(machineY - targetSpot.y, 2)
-    )
+    );
     
-    // Increased from 8 to 15 for bigger detection zone
-    if (distance < 8 && !isFound) {
-      setIsFound(true)
-      setOilSpurt(true)
-      setShowPopup(true)
+    if (distance < 6 && !isFound && !gameOver) {
+      // Pick a random message from the list
+      const randomMsg = successMessages[Math.floor(Math.random() * successMessages.length)];
+      setCurrentMessage(randomMsg); // Set the new message
+      
+      setIsFound(true);
+      setOilSpurt(true);
+      setShowPopup(true);
+      // Increase difficulty for the next round
+      setDifficulty(prev => prev + 0.5)
       
       setTimeout(() => {
         setShowPopup(false)
         setOilSpurt(false)
         setIsFound(false)
         generateNewTarget()
-      }, 3000)
+      }, 2500)
     }
   }
 
   const handleStart = (clientX, clientY) => {
-    if (!machineRef.current) return
+    if (!machineRef.current || gameOver) return
     
     setHasStarted(true) 
-
     const rect = machineRef.current.getBoundingClientRect()
     
     setDragOffset({
@@ -54,7 +127,7 @@ function App() {
   }
 
   const handleMove = (clientX, clientY) => {
-    if (!isDragging || !machineRef.current) return
+    if (!isDragging || !machineRef.current || gameOver) return
     
     const parentRect = machineRef.current.parentElement.getBoundingClientRect()
     
@@ -65,7 +138,6 @@ function App() {
     newY = Math.max(5, Math.min(90, newY))
     
     setPosition({ x: newX, y: newY })
-    // Check while dragging, not just on drop
     checkIfFound(newX, newY)
   }
 
@@ -112,78 +184,58 @@ function App() {
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       
-      {/* Game area */}
       <div className="relative w-full h-screen touch-none select-none" style={{ paddingBottom: '120px' }}>
 
-      {/* Instructions at top */}
       {!hasStarted && (
         <div className="absolute top-8 left-0 right-0 text-center z-50 px-4">
-          <p className="text-gray-800 text-lg md:text-2xl font-medium">
-            Click and drag the fracker to the oil spot for a surprise!
+          <p className="text-gray-800 text-lg md:text-2xl font-black uppercase tracking-tighter">
+            Hurry! The oil is rising! Drag the Fracker to the center of oil!
           </p>
         </div>
       )}  
 
-      {/* Visible oil spot target */}
+      {/* Improved Rapid-Growth Oil Spot */}
       <div
         className="absolute w-16 h-16 md:w-20 md:h-20 pointer-events-none"
         style={{
           left: `${targetSpot.x}%`,
           top: `${targetSpot.y}%`,
-          transform: 'translate(-50%, -50%)',
+          transform: `translate(-50%, -50%) scale(${oilScale})`,
+          // Removed standard transition to make the expansion feel raw and instant
           zIndex: 1,
         }}
       >
-        {/* Main oil puddle - sharp edges */}
+        {/* Organic Base Layer */}
         <div 
-          className="absolute inset-0"
+          className="absolute inset-0 bg-black"
           style={{
-            background: 'radial-gradient(ellipse 65% 55% at 45% 50%, #0a0a0a 0%, #1a1512 45%, #2a2218 75%, transparent 100%)',
-            clipPath: 'polygon(15% 25%, 25% 10%, 40% 5%, 60% 8%, 75% 15%, 88% 30%, 92% 50%, 85% 70%, 70% 85%, 50% 92%, 30% 88%, 15% 75%, 8% 55%, 10% 35%)',
+            borderRadius: oilBlob.borderRadius,
+            transform: `rotate(${oilBlob.rotation}deg)`,
           }}
         />
         
-        {/* Irregular splatter drops - sharp */}
-        <div className="absolute w-5 h-5 bg-black rounded-full" 
-            style={{ top: '5%', left: '65%', clipPath: 'ellipse(60% 70% at 40% 50%)' }} />
-        <div className="absolute w-4 h-4 bg-black rounded-full" 
-            style={{ top: '75%', left: '0%', clipPath: 'ellipse(50% 60% at 50% 40%)' }} />
-        <div className="absolute w-6 h-6 bg-black rounded-full" 
-            style={{ top: '70%', right: '8%', clipPath: 'ellipse(55% 65% at 45% 55%)' }} />
-        <div className="absolute w-3 h-3 bg-black rounded-full" 
-            style={{ top: '15%', left: '12%' }} />
-        <div className="absolute w-2 h-2 bg-black rounded-full" 
-            style={{ top: '30%', right: '10%' }} />
-        
-        {/* Dark core - sharp gradient */}
+        {/* Extra droplets for organic feel */}
+        {oilBlob.splatter.map((s, i) => (
+          <div
+            key={i}
+            className="absolute bg-black"
+            style={{
+              width: `${s.size}%`,
+              height: `${s.size}%`,
+              top: `${s.y}%`,
+              left: `${s.x}%`,
+              borderRadius: s.radius,
+            }}
+          />
+        ))}
+
+        {/* Interior Highlight (Sheen) */}
         <div 
-          className="absolute inset-0 flex items-center justify-center"
+          className="absolute bg-gray-900"
           style={{
-            background: 'radial-gradient(circle, #000000 0%, #0f0a08 25%, #1a1310 40%, transparent 55%)',
-          }}
-        />
-        
-        {/* Oil sheen highlight - sharp edge */}
-        <div 
-          className="absolute"
-          style={{
-            top: '25%',
-            left: '35%',
-            width: '25%',
-            height: '15%',
-            background: 'linear-gradient(135deg, rgba(80,60,40,0.4) 0%, transparent 60%)',
-          }}
-        />
-        
-        {/* Secondary small sheen */}
-        <div 
-          className="absolute"
-          style={{
-            top: '55%',
-            left: '50%',
-            width: '15%',
-            height: '10%',
-            background: 'linear-gradient(45deg, rgba(60,50,35,0.3) 0%, transparent 70%)',
+            inset: '15%',
+            borderRadius: oilBlob.borderRadius,
+            opacity: 0.5
           }}
         />
       </div>
@@ -203,17 +255,16 @@ function App() {
             userSelect: 'none',
             WebkitUserSelect: 'none',
             WebkitTouchCallout: 'none',
-            zIndex: 100, // Always on top, above disclaimer
+            zIndex: 100, 
+            visibility: gameOver ? 'hidden' : 'visible'
           }}
         >
           <div className="relative w-full h-full select-none pointer-events-none">
-            {/* Derrick legs */}
             <div className="absolute bottom-0 left-1/4 w-0.5 md:w-1 h-3/4 bg-gray-800"
                  style={{ transform: 'skewX(-6deg)' }} />
             <div className="absolute bottom-0 right-1/4 w-0.5 md:w-1 h-3/4 bg-gray-800"
                  style={{ transform: 'skewX(6deg)' }} />
             
-            {/* Cross beams */}
             <div className="absolute w-1/2 h-0.5 bg-gray-700 left-1/4"
                  style={{ top: '25%' }} />
             <div className="absolute w-1/2 h-0.5 bg-gray-700 left-1/4"
@@ -221,15 +272,12 @@ function App() {
             <div className="absolute w-1/2 h-0.5 bg-gray-700 left-1/4"
                  style={{ top: '75%' }} />
             
-            {/* Platform */}
             <div className="absolute bottom-0 w-full h-5 md:h-7 bg-gray-900 rounded-sm border border-gray-950" />
             
-            {/* Drill bit */}
             <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 md:w-2 h-2 md:h-3 bg-gray-950 ${
               oilSpurt ? 'animate-pulse' : ''
             }`} />
             
-            {/* Oil spurting */}
             {oilSpurt && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none">
                 {Array.from({ length: 10 }).map((_, i) => (
@@ -248,17 +296,28 @@ function App() {
           </div>
         </div>
 
-        {/* Success popup */}
-        {showPopup && (
-          <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50 px-4">
-            <div className="bg-black text-white px-6 py-4 md:px-12 md:py-6 rounded-2xl text-xl md:text-4xl font-bold animate-bounce shadow-2xl">
-              Get Fracked Loser!
+        {/* Popups */}
+        {(showPopup || gameOver) && (
+          <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[200] px-4">
+            <div className="bg-black text-white px-6 py-4 md:px-12 md:py-6 rounded-2xl text-xl md:text-4xl font-black uppercase italic animate-bounce shadow-2xl border-4 border-amber-900">
+              {gameOver ? "Congrats Frack-tard, you lost!" : currentMessage}
+              {gameOver && (
+                <button 
+                  onClick={() => {
+                    setGameOver(false); 
+                    setDifficulty(1); 
+                    generateNewTarget();
+                  }}
+                  className="block mt-4 text-sm bg-white text-black px-4 py-2 rounded-full pointer-events-auto mx-auto font-bold"
+                >
+                  RETRY
+                </button>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Legal disclaimer at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-yellow-50 border-t-2 border-yellow-200 px-4 py-4 md:py-6" style={{ zIndex: 10 }}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-start gap-3">
@@ -279,22 +338,10 @@ function App() {
 
       <style>{`
         @keyframes spurt {
-          0% {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(-80px) scale(0.3);
-            opacity: 0;
-          }
+          0% { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(-80px) scale(0.3); opacity: 0; }
         }
-        
-        * {
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-        }
+        * { -webkit-user-select: none; user-select: none; }
       `}</style>
     </div>
   )
