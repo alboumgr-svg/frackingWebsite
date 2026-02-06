@@ -25,7 +25,7 @@ function App() {
     )
     
     // Increased from 8 to 15 for bigger detection zone
-    if (distance < 5 && !isFound) {
+    if (distance < 8 && !isFound) {
       setIsFound(true)
       setOilSpurt(true)
       setShowPopup(true)
@@ -134,43 +134,56 @@ function App() {
           zIndex: 1,
         }}
       >
-        {/* Main oil splatter */}
+        {/* Main oil puddle - sharp edges */}
         <div 
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse 60% 50% at 45% 45%, rgba(20,15,10,0.95) 0%, rgba(15,10,8,0.85) 40%, rgba(10,8,6,0.6) 70%, transparent 100%)',
-            filter: 'blur(1px)',
+            background: 'radial-gradient(ellipse 65% 55% at 45% 50%, #0a0a0a 0%, #1a1512 45%, #2a2218 75%, transparent 100%)',
+            clipPath: 'polygon(15% 25%, 25% 10%, 40% 5%, 60% 8%, 75% 15%, 88% 30%, 92% 50%, 85% 70%, 70% 85%, 50% 92%, 30% 88%, 15% 75%, 8% 55%, 10% 35%)',
           }}
         />
         
-        {/* Irregular splatter edges */}
-        <div className="absolute w-6 h-6 bg-black/70 rounded-full blur-sm" 
-            style={{ top: '-10%', left: '60%' }} />
-        <div className="absolute w-4 h-4 bg-black/60 rounded-full blur-sm" 
-            style={{ top: '70%', left: '-5%' }} />
-        <div className="absolute w-5 h-5 bg-black/65 rounded-full blur-sm" 
-            style={{ top: '65%', right: '5%' }} />
-        <div className="absolute w-3 h-3 bg-black/50 rounded-full blur-sm" 
-            style={{ top: '10%', left: '10%' }} />
+        {/* Irregular splatter drops - sharp */}
+        <div className="absolute w-5 h-5 bg-black rounded-full" 
+            style={{ top: '5%', left: '65%', clipPath: 'ellipse(60% 70% at 40% 50%)' }} />
+        <div className="absolute w-4 h-4 bg-black rounded-full" 
+            style={{ top: '75%', left: '0%', clipPath: 'ellipse(50% 60% at 50% 40%)' }} />
+        <div className="absolute w-6 h-6 bg-black rounded-full" 
+            style={{ top: '70%', right: '8%', clipPath: 'ellipse(55% 65% at 45% 55%)' }} />
+        <div className="absolute w-3 h-3 bg-black rounded-full" 
+            style={{ top: '15%', left: '12%' }} />
+        <div className="absolute w-2 h-2 bg-black rounded-full" 
+            style={{ top: '30%', right: '10%' }} />
         
-        {/* Dark center */}
+        {/* Dark core - sharp gradient */}
         <div 
           className="absolute inset-0 flex items-center justify-center"
           style={{
-            background: 'radial-gradient(circle, rgba(5,5,5,0.9) 0%, rgba(15,10,8,0.7) 30%, transparent 60%)',
+            background: 'radial-gradient(circle, #000000 0%, #0f0a08 25%, #1a1310 40%, transparent 55%)',
           }}
         />
         
-        {/* Subtle shine on oil */}
+        {/* Oil sheen highlight - sharp edge */}
         <div 
-          className="absolute opacity-20"
+          className="absolute"
           style={{
-            top: '20%',
-            left: '30%',
-            width: '30%',
-            height: '20%',
-            background: 'radial-gradient(ellipse, rgba(255,255,255,0.3) 0%, transparent 70%)',
-            filter: 'blur(2px)',
+            top: '25%',
+            left: '35%',
+            width: '25%',
+            height: '15%',
+            background: 'linear-gradient(135deg, rgba(80,60,40,0.4) 0%, transparent 60%)',
+          }}
+        />
+        
+        {/* Secondary small sheen */}
+        <div 
+          className="absolute"
+          style={{
+            top: '55%',
+            left: '50%',
+            width: '15%',
+            height: '10%',
+            background: 'linear-gradient(45deg, rgba(60,50,35,0.3) 0%, transparent 70%)',
           }}
         />
       </div>
