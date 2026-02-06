@@ -14,12 +14,24 @@ const generateOilBlob = () => {
   }
 }
 
+// NEW: Calculate the exact scale needed to cover the screen from the current target point
+const calculateMaxScale = (tx, ty) => {
+  // Corners of the screen in %
+  const corners = [[0,0], [100,0], [0,100], [100,100]];
+  const distances = corners.map(([cx, cy]) => {
+    return Math.sqrt(Math.pow(tx - cx, 2) + Math.pow(ty - cy, 2));
+  });
+  // The base oil div is ~20px (about 5% of screen). 
+  // We multiply by 1.2 to account for the organic "blob" edges.
+  return (Math.max(...distances) / 5) * 1.4;
+};
+
 const successMessages = [
   "Nice fracking job!",
   "Good fracking work!",
   "Frack-tastic effort!",
   "Legendary fracking!",
-  "Keep on fracking!",
+  "Keep fracking! Harder!",
   "Frack to the future!",
   "You're a fracking natural!",
   "Absolute fracking genius!",
@@ -27,7 +39,7 @@ const successMessages = [
   "Frack me, that was fast!",
   "You fracked that hole perfectly!",
   "The best fracker in the patch!",
-  "Frack it like you mean it!",
+  "Frack me uppppp!",
   "Mother Earth felt that one!",
   "Fracking masterclass!",
   "Don't stop fracking now!",
@@ -38,7 +50,7 @@ const successMessages = [
   "Drill baby, drill!",
   "A fracking master at work!",
   "You've got the fracking touch!",
-  "Total fracking domination!"
+  "Fracking all over the place!"
 ];
 
 function App() {
@@ -52,6 +64,7 @@ function App() {
   const machineRef = useRef(null)
   const [hasStarted, setHasStarted] = useState(false)
   const [oilBlob, setOilBlob] = useState(generateOilBlob())
+  const [maxRequiredScale, setMaxRequiredScale] = useState(calculateMaxScale(75, 60))
   
   // Growth, losing, and difficulty states
   const [oilScale, setOilScale] = useState(1)
@@ -60,12 +73,15 @@ function App() {
   const [currentMessage, setCurrentMessage] = useState(successMessages[0]);
 
   const generateNewTarget = () => {
+    const newX = 20 + Math.random() * 60;
+    const newY = 20 + Math.random() * 45;
+    
     setOilBlob(generateOilBlob())
-    setOilScale(1) // Reset growth for next round
-    setTargetSpot({
-      x: 20 + Math.random() * 60,
-      y: 20 + Math.random() * 45 
-    })
+    setOilScale(1)
+    setTargetSpot({ x: newX, y: newY })
+    
+    // ADD THIS LINE:
+    setMaxRequiredScale(calculateMaxScale(newX, newY))
   }
 
   // Handle rapid oil growth with difficulty scaling
@@ -74,18 +90,20 @@ function App() {
 
     const interval = setInterval(() => {
       setOilScale(prev => {
-        // Increases growth speed based on how many you've successfully fracked
-        const next = prev + (0.03 * difficulty);
-        if (next > 35) { 
+        const next = prev + (0.07 * difficulty);
+        
+        // UPDATE THIS CONDITION:
+        if (next >= maxRequiredScale) { 
           setGameOver(true);
           clearInterval(interval);
+          return maxRequiredScale; // Cap it at full screen
         }
         return next;
       });
-    }, 40); // 40ms for very smooth, rapid expansion
+    }, 40);
 
     return () => clearInterval(interval);
-  }, [gameOver, isFound, targetSpot, difficulty]);
+  }, [gameOver, isFound, maxRequiredScale, difficulty]); // Add maxRequiredScale to dependencies
 
   const checkIfFound = (machineX, machineY) => {
     const distance = Math.sqrt(
@@ -202,7 +220,7 @@ function App() {
           top: `${targetSpot.y}%`,
           transform: `translate(-50%, -50%) scale(${oilScale})`,
           // Removed standard transition to make the expansion feel raw and instant
-          zIndex: 1,
+          zIndex: 100,
         }}
       >
         {/* Organic Base Layer */}
@@ -255,7 +273,7 @@ function App() {
             userSelect: 'none',
             WebkitUserSelect: 'none',
             WebkitTouchCallout: 'none',
-            zIndex: 100, 
+            zIndex: 150, 
             visibility: gameOver ? 'hidden' : 'visible'
           }}
         >
@@ -299,16 +317,12 @@ function App() {
         {/* Popups */}
         {(showPopup || gameOver) && (
           <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[200] px-4">
-            <div className="bg-black text-white px-6 py-4 md:px-12 md:py-6 rounded-2xl text-xl md:text-4xl font-black uppercase italic animate-bounce shadow-2xl border-4 border-amber-900">
-              {gameOver ? "Congrats Frack-tard, you lost!" : currentMessage}
+            <div className="bg-black text-white px-6 py-4 md:px-12 md:py-6 rounded-2xl text-xl md:text-4xl font-black uppercase italic animate-bounce shadow-2xl border-4 border-amber-900 flex flex-col items-center justify-center text-center max-w-lg">
+              <span>{gameOver ? "Get Fracked Loser!" : currentMessage}</span>
               {gameOver && (
                 <button 
-                  onClick={() => {
-                    setGameOver(false); 
-                    setDifficulty(1); 
-                    generateNewTarget();
-                  }}
-                  className="block mt-4 text-sm bg-white text-black px-4 py-2 rounded-full pointer-events-auto mx-auto font-bold"
+                  onClick={() => {setGameOver(false); setDifficulty(1); generateNewTarget();}}
+                  className="mt-4 text-sm bg-white text-black px-6 py-2 rounded-full pointer-events-auto font-bold hover:bg-gray-200 transition-colors"
                 >
                   RETRY
                 </button>
