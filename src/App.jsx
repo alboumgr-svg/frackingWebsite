@@ -9,6 +9,7 @@ function App() {
   const [showPopup, setShowPopup] = useState(false)
   const [oilSpurt, setOilSpurt] = useState(false)
   const machineRef = useRef(null)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const generateNewTarget = () => {
     setTargetSpot({
@@ -41,6 +42,8 @@ function App() {
   const handleStart = (clientX, clientY) => {
     if (!machineRef.current) return
     
+    setHasStarted(true) 
+
     const rect = machineRef.current.getBoundingClientRect()
     
     setDragOffset({
@@ -111,7 +114,33 @@ function App() {
       
       {/* Game area */}
       <div className="relative w-full h-screen touch-none select-none" style={{ paddingBottom: '120px' }}>
-        
+
+      {/* Instructions at top */}
+      {!hasStarted && (
+        <div className="absolute top-8 left-0 right-0 text-center z-50 px-4">
+          <p className="text-gray-800 text-lg md:text-2xl font-medium">
+            Click and drag the fracker to the oil spot for a surprise
+          </p>
+        </div>
+      )}  
+
+      {/* Visible oil spot target */}
+      <div
+        className="absolute w-12 h-12 md:w-16 md:h-16 rounded-full pointer-events-none"
+        style={{
+          left: `${targetSpot.x}%`,
+          top: `${targetSpot.y}%`,
+          transform: 'translate(-50%, -50%)',
+          background: 'radial-gradient(circle, rgba(139,69,19,0.8) 0%, rgba(101,67,33,0.6) 50%, rgba(139,69,19,0.3) 100%)',
+          boxShadow: '0 0 20px rgba(139,69,19,0.4), inset 0 0 10px rgba(0,0,0,0.3)',
+          zIndex: 1,
+        }}
+      >
+
+      {/* Oil shimmer effect */}
+      <div className="absolute inset-2 rounded-full bg-gradient-to-br from-amber-900/40 to-transparent animate-pulse" />
+      </div>
+
         {/* Draggable fracking machine */}
         <div
           ref={machineRef}
